@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+echo "---> Python Buildpack"
+
+# 1. GET ARGS
+layers_dir=$1
+plan_path=$3
+
+# 2. DOWNLOAD PYTHON
+python_layer_dir="${layers_dir}/python"
+mkdir -p "${python_layer_dir}"
+
+# determine python version provided during detection
+python_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "python") | .version')
+remote_python_version=$(< "${python_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+if [[ "${python_version}" == "${remote_python_version}" ]] ; then
+  echo "---> Reusing python"
+else
+  echo "---> Downloading and extracting Python ${python_version}"
+  python_url=https://buildpacks.drycc.cc/python/${CNB_STACK_ID}/runtimes/python-${python_version}.tar.gz
+  echo "python_url: ${python_url}"  # debug
+  wget -q -O - "${python_url}" | tar -xzf - -C "${python_layer_dir}"
+  cat > "${python_layer_dir}.toml" <<EOL
+cache = true
+launch = true
+metadata = "${python_version}"
+EOL
+fi
+
+# bootstraps pip / setuptools.
+pip_layer_dir="${layers_dir}/pip"
+mkdir -p "${pip_layer_dir}"
+PIP_VERSION='20.2.4'
+SETUPTOOLS_VERSION='47.1.1'
+WHEEL_VERSION='0.36.2'
+PIP_WHEEL_FILENAME="pip-${PIP_VERSION}-py2.py3-none-any.whl"
+PIP_WHEEL_URL=https://buildpacks.drycc.cc/python/common/${PIP_WHEEL_FILENAME}
+PIP_WHEEL="${pip_layer_dir}/${PIP_WHEEL_FILENAME}"
+
+remote_pip_version=$(< "${pip_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+if [[ "${PIP_VERSION}" == "${remote_pip_version}" ]] ; then
+  echo "---> Reusing pip"
+else
+  echo "---> Installing pip ${PIP_VERSION}, setuptools ${SETUPTOOLS_VERSION} and wheel ${WHEEL_VERSION}"
+  echo "PIP_WHEEL_URL: ${PIP_WHEEL_URL}"  # debug
+  if ! curl -sSf "${PIP_WHEEL_URL}" -o "${PIP_WHEEL}"; then
+    echo "!    Failed to download pip"
+    exit 1
+  fi
+  ${python_layer_dir}/bin/python "${PIP_WHEEL}/pip" install --quiet --disable-pip-version-check --no-cache \
+  "${PIP_WHEEL}" "setuptools==${SETUPTOOLS_VERSION}" "wheel==${WHEEL_VERSION}"
+  cat > "${pip_layer_dir}.toml" <<EOL
+cache = true
+launch = true
+metadata = "${PIP_VERSION}"
+EOL
+fi
+
+# 3. MAKE python and pip AVAILABLE TO THIS SCRIPT
+export PATH="${python_layer_dir}/bin:${PATH}"
+export C_INCLUDE_PATH="${python_layer_dir}/include:${C_INCLUDE_PATH}"
+export CPLUS_INCLUDE_PATH="${python_layer_dir}/include:${C_INCLUDE_PATH}"
+export LIBRARY_PATH="${python_layer_dir}/lib:${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${python_layer_dir}/lib:${LD_LIBRARY_PATH}"
+export PKG_CONFIG_PATH="${python_layer_dir}/lib/pkg-config:${PKG_CONFIG_PATH}"
+
+# Compares previous requirements checksum to the current requirements
+requirements_layer_dir="${layers_dir}/requirements"
+local_requirements_checksum=$(sha256sum requirements.txt | cut -d ' ' -f 1 || echo 'not found')
+remote_requirements_checksum=$(< "${requirements_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+
+mkdir -p "${requirements_layer_dir}/bin"
+if [[ -f Gemfile.lock && "${local_requirements_checksum}" == "${remote_requirements_checksum}" ]] ; then
+  echo "---> Reusing requirements"
+else
+  echo "---> Installing requirements with pip"
+  ${python_layer_dir}/bin/pip install -r requirements.txt \
+  --exists-action=w --src=${python_layer_dir}/src \
+  --disable-pip-version-check --no-cache-dir
+  cat > "${requirements_layer_dir}.toml" <<EOL
+cache = true
+launch = true
+metadata = "${local_requirements_checksum}"
+EOL
+fi
+
+generate-launch.sh "${layers_dir}"
