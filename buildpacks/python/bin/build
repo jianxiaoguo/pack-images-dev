@@ -19,7 +19,6 @@ if [[ "${python_version}" == "${remote_python_version}" ]] ; then
 else
   echo "---> Downloading and extracting Python ${python_version}"
   python_url=https://buildpacks.drycc.cc/python/${CNB_STACK_ID}/runtimes/python-${python_version}.tar.gz
-  echo "python_url: ${python_url}"  # debug
   wget -q -O - "${python_url}" | tar -xzf - -C "${python_layer_dir}"
   cat > "${python_layer_dir}.toml" <<EOL
 cache = true
@@ -43,7 +42,6 @@ if [[ "${PIP_VERSION}" == "${remote_pip_version}" ]] ; then
   echo "---> Reusing pip"
 else
   echo "---> Installing pip ${PIP_VERSION}, setuptools ${SETUPTOOLS_VERSION} and wheel ${WHEEL_VERSION}"
-  echo "PIP_WHEEL_URL: ${PIP_WHEEL_URL}"  # debug
   if ! curl -sSf "${PIP_WHEEL_URL}" -o "${PIP_WHEEL}"; then
     echo "!    Failed to download pip"
     exit 1
@@ -69,9 +67,9 @@ export PKG_CONFIG_PATH="${python_layer_dir}/lib/pkg-config:${PKG_CONFIG_PATH}"
 requirements_layer_dir="${layers_dir}/requirements"
 local_requirements_checksum=$(sha256sum requirements.txt | cut -d ' ' -f 1 || echo 'not found')
 remote_requirements_checksum=$(< "${requirements_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+mkdir -p "${requirements_layer_dir}"
 
-mkdir -p "${requirements_layer_dir}/bin"
-if [[ -f Gemfile.lock && "${local_requirements_checksum}" == "${remote_requirements_checksum}" ]] ; then
+if [[ -f requirements.txt && "${local_requirements_checksum}" == "${remote_requirements_checksum}" ]] ; then
   echo "---> Reusing requirements"
 else
   echo "---> Installing requirements with pip"
