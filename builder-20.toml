@@ -13,6 +13,7 @@ version = "0.11.3"
 id = "drycc/ruby"
 version = "0.0.1"
 
+
 [[buildpacks]]
   id = "drycc/python"
   version = "0.0.1"
@@ -21,6 +22,17 @@ version = "0.0.1"
 [[order]]
 [[order.group]]
 id = "drycc/python"
+version = "0.0.1"
+
+
+[[buildpacks]]
+  id = "drycc/go"
+  version = "0.0.1"
+  uri = "./buildpacks/go"
+
+[[order]]
+[[order.group]]
+id = "drycc/go"
 version = "0.0.1"
 
 [stack]

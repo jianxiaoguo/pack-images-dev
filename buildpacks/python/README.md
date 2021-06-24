@@ -6,5 +6,5 @@ Compatible apps:
 ### Usage
 
 ```bash
-pack build ruby-bundler-project --builder drycc/buildpacks:20
+pack build python-pip-project --builder drycc/buildpacks:20
 ```
