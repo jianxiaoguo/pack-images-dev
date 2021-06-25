@@ -52,8 +52,8 @@ else
     echo "!    Failed to download pip"
     exit 1
   fi
-  ${python_layer_dir}/bin/python "${PIP_WHEEL}/pip" install --quiet --disable-pip-version-check --no-cache \
-  "${PIP_WHEEL}" "setuptools==${SETUPTOOLS_VERSION}" "wheel==${WHEEL_VERSION}"
+  "${python_layer_dir}"/bin/python "${PIP_WHEEL}/pip" install --quiet --disable-pip-version-check --no-cache \
+  "${PIP_WHEEL}" setuptools=="${SETUPTOOLS_VERSION}" wheel=="${WHEEL_VERSION}"
   cat > "${pip_layer_dir}.toml" <<EOL
 cache = true
 launch = true
@@ -82,8 +82,8 @@ if [[ -f requirements.txt && "${local_requirements_checksum}" == "${remote_requi
   echo "---> Reusing requirements"
 else
   echo "---> Installing requirements with pip"
-  ${python_layer_dir}/bin/pip install -r requirements.txt \
-  --exists-action=w --src=${python_layer_dir}/src \
+  "${python_layer_dir}"/bin/pip install -r requirements.txt \
+  --exists-action=w --src="${python_layer_dir}"/src \
   --disable-pip-version-check --no-cache-dir
   cat > "${requirements_layer_dir}.toml" <<EOL
 cache = true

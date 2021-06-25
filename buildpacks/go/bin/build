@@ -11,8 +11,8 @@ plan_path=$3
 go_layer_dir="${layers_dir}/go"
 mkdir -p "${go_layer_dir}"
 arch="amd64"
-if [[ -f arch.txt ]]; then
-    arch=$(< arch.txt tr -d '[:space:]')
+if [[ -f .arch_version ]]; then
+    arch=$(< .arch_version tr -d '[:space:]')
 fi
 # determine go version provided during detection
 go_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "go") | .version')

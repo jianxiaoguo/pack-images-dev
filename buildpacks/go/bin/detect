@@ -12,7 +12,7 @@ plan_path=$2
 # 3. GET CONFIGURATION
 version=1.16
 if [[ -f go.mod ]]; then
-    version=$(cat go.mod | grep 'go [1.*]' | tr -d 'go ')
+    version=$(< go.mod grep 'go [1.*]' | tr -d 'go ')
 fi
 
 # 4. DECLARE DEPENDENCIES

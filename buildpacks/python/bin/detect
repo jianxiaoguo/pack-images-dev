@@ -11,8 +11,8 @@ plan_path=$2
 
 # 3. GET CONFIGURATION
 version=3.9.5
-if [[ -f runtime.txt ]]; then
-    version=$(< runtime.txt tr -d '[:space:] | python-')
+if [[ -f .python_version ]]; then
+    version=$(< .python_version tr -d '[:space:] | python-')
 fi
 
 # 4. DECLARE DEPENDENCIES
