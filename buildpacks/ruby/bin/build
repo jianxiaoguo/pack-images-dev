@@ -13,7 +13,10 @@ mkdir -p "${ruby_layer_dir}"
 
 # determine ruby version provided during detection
 ruby_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "ruby") | .version')
-remote_ruby_version=$(< "${ruby_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+remote_ruby_version="not found"
+if [[ -f "${ruby_layer_dir}.toml" ]]; then
+    remote_ruby_version=$(< "${ruby_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+fi
 if [[ "${ruby_version}" == "${remote_ruby_version}" ]] ; then
   echo "---> Reusing ruby"
 else
@@ -38,7 +41,10 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${ruby_layer_dir}/lib"
 # Compares previous Gemfile.lock checksum to the current Gemfile.lock
 bundler_layer_dir="${layers_dir}/bundler"
 local_bundler_checksum=$(sha256sum Gemfile.lock | cut -d ' ' -f 1 || echo 'not found') 
-remote_bundler_checksum=$(< "${bundler_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+remote_bundler_checksum="not found"
+if [[ -f "${bundler_layer_dir}.toml" ]]; then
+    remote_bundler_checksum=$(< "${bundler_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+fi
 
 mkdir -p "${bundler_layer_dir}/bin"
 bundle config --local path "${bundler_layer_dir}" >/dev/null

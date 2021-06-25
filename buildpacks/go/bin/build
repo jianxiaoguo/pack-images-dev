@@ -13,7 +13,10 @@ mkdir -p "${go_layer_dir}"
 
 # determine go version provided during detection
 go_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "go") | .version')
-remote_go_version=$(< "${go_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+remote_go_version='not found'
+if [[ -f "${go_layer_dir}.toml" ]]; then
+    remote_go_version=$(< "${go_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+fi
 if [[ "${go_version}" == "${remote_go_version}" ]] ; then
   echo "---> Reusing go"
 else
@@ -34,7 +37,10 @@ export GOPATH="${go_cache_layer_dir}"
 
 # Compares previous go.mod checksum to the current go.mod
 local_mod_checksum=$(sha256sum go.mod | cut -d ' ' -f 1 || echo 'not found')
-remote_mod_checksum=$(< "${go_cache_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+remote_mod_checksum='not found'
+if [[ -f "${go_cache_layer_dir}.toml" ]]; then
+    remote_mod_checksum=$(< "${go_cache_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+fi
 mkdir -p "${go_cache_layer_dir}"
 
 if [[ -f go.mod && "${local_mod_checksum}" == "${remote_mod_checksum}" ]] ; then

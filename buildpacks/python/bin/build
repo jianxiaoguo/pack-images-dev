@@ -13,7 +13,10 @@ mkdir -p "${python_layer_dir}"
 
 # determine python version provided during detection
 python_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "python") | .version')
-remote_python_version=$(< "${python_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+remote_python_version="not found"
+if [[ -f "${python_layer_dir}.toml" ]]; then
+    remote_python_version=$(< "${python_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+fi
 if [[ "${python_version}" == "${remote_python_version}" ]] ; then
   echo "---> Reusing python"
 else
@@ -37,7 +40,10 @@ PIP_WHEEL_FILENAME="pip-${PIP_VERSION}-py2.py3-none-any.whl"
 PIP_WHEEL_URL=https://buildpacks.drycc.cc/python/common/${PIP_WHEEL_FILENAME}
 PIP_WHEEL="${pip_layer_dir}/${PIP_WHEEL_FILENAME}"
 
-remote_pip_version=$(< "${pip_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+remote_pip_version='not found'
+if [[ -f "${pip_layer_dir}.toml" ]]; then
+    remote_pip_version=$(< "${pip_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+fi
 if [[ "${PIP_VERSION}" == "${remote_pip_version}" ]] ; then
   echo "---> Reusing pip"
 else
@@ -66,7 +72,10 @@ export PKG_CONFIG_PATH="${python_layer_dir}/lib/pkg-config:${PKG_CONFIG_PATH}"
 # Compares previous requirements checksum to the current requirements
 requirements_layer_dir="${layers_dir}/requirements"
 local_requirements_checksum=$(sha256sum requirements.txt | cut -d ' ' -f 1 || echo 'not found')
-remote_requirements_checksum=$(< "${requirements_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+remote_requirements_checksum='not found'
+if [[ -f "${requirements_layer_dir}.toml" ]]; then
+    remote_requirements_checksum=$(< "${requirements_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
+fi
 mkdir -p "${requirements_layer_dir}"
 
 if [[ -f requirements.txt && "${local_requirements_checksum}" == "${remote_requirements_checksum}" ]] ; then
