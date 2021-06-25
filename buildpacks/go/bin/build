@@ -10,7 +10,10 @@ plan_path=$3
 # 2. DOWNLOAD go
 go_layer_dir="${layers_dir}/go"
 mkdir -p "${go_layer_dir}"
-
+arch="amd64"
+if [[ -f arch.txt ]]; then
+    arch=$(< arch.txt tr -d '[:space:]')
+fi
 # determine go version provided during detection
 go_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "go") | .version')
 remote_go_version='not found'
@@ -21,7 +24,7 @@ if [[ "${go_version}" == "${remote_go_version}" ]] ; then
   echo "---> Reusing go"
 else
   echo "---> Downloading and extracting go ${go_version}"
-  go_url=https://golang.org/dl/go${go_version}.linux-amd64.tar.gz
+  go_url=https://golang.org/dl/go${go_version}.linux-${arch}.tar.gz
   wget -q -O - "${go_url}" | tar -xzf - -C "${go_layer_dir}"
   cat > "${go_layer_dir}.toml" <<EOL
 cache = true

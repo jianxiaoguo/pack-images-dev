@@ -1,7 +1,7 @@
 # Go Buildpack
 
 Compatible apps:
-- Go apps that use go-mod-vendor
+- Go apps that use go-mod-vendor, configure arch.txt in the app root directory and specify the arch, eg:arm64.
 
 ### Usage
 
