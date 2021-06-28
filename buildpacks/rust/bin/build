@@ -16,10 +16,6 @@ export RUSTUP_HOME="${rust_layer_dir}/multirust"
 # to do the right thing when new versions are released.
 export CARGO_HOME="${rust_layer_dir}"
 
-# Set this to "1" in `RustConfig` to just install a Rust toolchain and not
-# build `Cargo.toml`.  This is useful if you have a project written in Ruby
-# or Node (for example) that needs to build extension modules using Rust.
-RUST_SKIP_BUILD=0
 # Set this to "1" in `RustConfig` to install diesel at build time and copy it
 # into the target directory, next to your app binary. This makes it easy to
 # run migrations by adding a release step to your Procfile:
@@ -45,12 +41,6 @@ if [[ "${rust_version}" == "${remote_rust_version}" ]] ; then
 else
   # Standard paranoia.
   set -eu
-  # Check our configuration options.
-  if [ -z ${rust_version+x} ]; then
-    >&2 echo "failed: must set version with rust-toolchain or RustConfig to indicate the Rust version."
-    exit 1
-  fi
-
   echo "---> Downloading rustup"
   curl https://sh.rustup.rs -sSf > rustup.sh
   chmod u+x rustup.sh
@@ -62,7 +52,6 @@ else
     echo "failed: Cannot find Rust binaries at ${rust_layer_dir}"
     exit 1
   fi
-
   cat > "${rust_layer_dir}.toml" <<EOL
 cache = true
 launch = true
@@ -73,26 +62,6 @@ fi
 # 3. MAKE RUST AVAILABLE TO THIS SCRIPT
 export PATH="${CARGO_HOME}/bin:${PATH}"
 export CARGO_TARGET_DIR="${CARGO_HOME}/target"
-
-# Compares previous Cargo.toml checksum to the current Cargo.toml
-
-#cargo_layer_dir="${layers_dir}/cargo"
-#local_cargo_checksum=$(sha256sum Cargo.toml | cut -d ' ' -f 1 || echo 'not found')
-#remote_cargo_checksum="not found"
-#if [[ -f "${cargo_layer_dir}.toml" ]]; then
-#    remote_cargo_checksum=$(< "${cargo_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
-#fi
-#
-#if [[ -f Cargo.toml && "${local_cargo_checksum}" == "${remote_cargo_checksum}" ]] ; then
-#  echo "---> Reusing Cargo.toml"
-#else
-#  echo "---> Installing gems"
-#  cat > "${cargo_layer_dir}.toml" <<EOL
-#cache = true
-#launch = true
-#metadata = "${local_cargo_checksum}"
-#EOL
-#fi
 
 # todo debug
 cat > $CARGO_HOME/config << EOL
@@ -111,15 +80,11 @@ registry = "https://mirrors.sjtug.sjtu.edu.cn/git/crates.io-index"
 registry = "git://crates.rustcc.cn/crates.io-index"
 EOL
 
-if [ $RUST_SKIP_BUILD -ne 1 ]; then
-  echo "-----> Building application using Cargo"
-#  rm -rf target/
-  cargo build $RUST_CARGO_BUILD_FLAGS
-  mkdir -p target/release
-  find "$CARGO_TARGET_DIR/release" -maxdepth 1 -type f -executable -exec cp -a -t target/release {} \;
-else
-  echo "-----> Skipping Cargo build"
-fi
+echo "-----> Building application using Cargo"
+rm -rf target/
+cargo build $RUST_CARGO_BUILD_FLAGS
+mkdir -p target/release
+find "$CARGO_TARGET_DIR/release" -maxdepth 1 -type f -executable -exec cp -a -t target/release {} \;
 
 # Install diesel so we can use it for migrations
 if [ $RUST_INSTALL_DIESEL -eq 1 ]; then
