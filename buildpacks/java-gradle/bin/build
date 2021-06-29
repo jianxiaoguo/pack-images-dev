@@ -42,8 +42,6 @@ get_jdk_url() {
 
 version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "jdk") | .version')
 jdk_url="$(get_jdk_url)"
-maven_url="https://apache.org/dist/maven/maven-3/3.5.4/binaries/apache-maven-3.5.4-bin.tar.gz"
-maven_version="3.5.4"
 
 # If it doesn't exist locally, create a JDK cache layer
 # This makes JDK available to subsequent buildpacks as well
@@ -89,55 +87,32 @@ for var in "$layers_dir"/jdk/env/*; do
 done
 export PATH=${jdk_layer_dir}/bin:$PATH
 
-# 4. MAKE MAVEN M2 CACHE LAYER
-m2_layer_dir="${layers_dir}/maven_m2"
-if [[ ! -d "${m2_layer_dir}" ]]; then
-  mkdir -p "${m2_layer_dir}"
-  echo "cache = true" > "${m2_layer_dir}.toml"
+
+# 4. MAKE GRADLE CACHE LAYER
+gradle_layer_dir="${layers_dir}/gradle"
+
+if [[ ! -d ${gradle_layer_dir} ]]; then
+  mkdir -p ${gradle_layer_dir}
+  echo "cache = true" > ${gradle_layer_dir}.toml
 fi
-ln -s "${m2_layer_dir}" "$HOME/.m2"
+ln -s ${gradle_layer_dir} $HOME/.gradle
+
 # 5. RUN BUILD
-MAVEN_OPTS="${MAVEN_OPTS:-"-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap"}"
+echo "---> Running Gradle Wrapper"
+./gradlew clean build -x test --no-daemon
 
-if [[ -x mvnw ]]; then
-  echo "---> Running Maven Wrapper"
-  ./mvnw clean install -B -DskipTests
+# 6. SET START COMMAND
+if [ -f Procfile ]; then
+    generate-launch.sh "${layers_dir}"
 else
-  maven_layer_dir="${layers_dir}/maven"
-  if [[ -f "${layers_dir}/maven.toml" ]]; then
-    cached_maven_url=$(cat "${maven_layer_dir}.toml" | yj -t | jq -r .metadata.url 2>/dev/null || echo 'Maven TOML parsing failed')
-  fi
-  if [[ "${maven_url}" != "${cached_maven_url}" ]] ; then
-    echo "---> Installing Maven"
-    rm -rf "${maven_layer_dir}"
-    mkdir -p "${maven_layer_dir}"
-    wget -q -O - "${maven_url}" | tar pxz -C "${maven_layer_dir}" --strip-components=1
-    cat > "${maven_layer_dir}.toml" << EOF
-launch = true
-build = true
-cache = true
-[metadata]
-version = "${maven_version}"
-url = "${maven_url}"
-EOF
-  fi
-  export PATH="${PATH}:${layers_dir}/maven/bin"
-  echo "---> Running Maven"
-  mvn clean install -B -DskipTests
-fi
-
-# 6. SET DEFAULT START COMMAND
-target_dir="target"
-# shellcheck disable=SC2044
-for jar_file in $(find "$target_dir" -maxdepth 1 -name "*.jar" -type f); do
-  cat >> "${layers_dir}/launch.toml" <<EOL
+    target_dir="build/libs"
+    # shellcheck disable=SC2044
+    for jar_file in $(find "$target_dir" -maxdepth 1 -name "*.jar" -type f); do
+      cat >> "${layers_dir}/launch.toml" <<EOL
 [[processes]]
 type = "web"
 command = "java -jar ${jar_file}"
 EOL
   break;
 done
-
-if [ -f Procfile ]; then
-    generate-launch.sh "${layers_dir}"
 fi
