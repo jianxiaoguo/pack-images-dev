@@ -12,15 +12,14 @@ bp_dir=$(
 	cd "$(dirname "$0")"/..
 	pwd
 )
-echo "ls: $(ls -lh $bp_dir/lib/)"  # todo debug
 layers_dir=$1
 env_dir="$2/env"
 plan_path=$3
 
 # 2. LOAD USER-PROVIDED BUILD-TIME ENVIRONMENT VARIABLES
 if compgen -G "${env_dir}/*" > /dev/null; then
-  for var in ${env_dir}/*; do
-    declare "$(basename ${var})=$(<${var})"
+  for var in "${env_dir}"/*; do
+    declare "$(basename "${var}")=$(<"${var}")"
   done
 fi
 
@@ -50,8 +49,8 @@ jdk_url="$(get_jdk_url)"
 # If it doesn't exist locally, create a JDK cache layer
 # This makes JDK available to subsequent buildpacks as well
 jdk_layer_dir=${layers_dir}/jdk
-if [[ -f ${jdk_layer_dir}.toml ]]; then
-  cached_jdk_url=$(cat "${jdk_layer_dir}.toml" | yj -t | jq -r .metadata.url 2>/dev/null || echo 'JDK TOML parsing failed')
+if [[ -f "${jdk_layer_dir}.toml" ]]; then
+  cached_jdk_url=$(< "${jdk_layer_dir}.toml" yj -t | jq -r .metadata.url 2>/dev/null || echo 'JDK TOML parsing failed')
 fi
 
 if [[ "${jdk_url}" != "${cached_jdk_url}" ]] ; then
@@ -68,10 +67,10 @@ version = "${version}"
 EOF
 
   echo "${layers_dir}"/jdk > "${layers_dir}"/jdk/env/JAVA_HOME
-  if [[ -z ${LD_LIBRARY_PATH} ]]; then
-    echo "${JAVA_HOME}/jre/lib/${arch}/server" > ${jdk_layer_dir}/env/LD_LIBRARY_PATH
+  if [[ -z "${LD_LIBRARY_PATH}" ]]; then
+    echo "${JAVA_HOME}/jre/lib/${arch}/server" > "${jdk_layer_dir}/env/LD_LIBRARY_PATH"
   else
-    echo "${JAVA_HOME}/jre/lib/${arch}/server:${LD_LIBRARY_PATH}" > ${jdk_layer_dir}/env/LD_LIBRARY_PATH
+    echo "${JAVA_HOME}/jre/lib/${arch}/server:${LD_LIBRARY_PATH}" > "${jdk_layer_dir}"/env/LD_LIBRARY_PATH
   fi
 
   mkdir -p "${jdk_layer_dir}/profile.d"
@@ -89,11 +88,13 @@ fi
 for var in "$layers_dir"/jdk/env/*; do
   declare "$(basename "$var")=$(<"$var")"
 done
-export PATH=${jdk_layer_dir}/bin:$PATH
+export PATH="${jdk_layer_dir}/bin:$PATH"
 
 # 4. MAKE CACHE LAYER, RUN BUILD
-source "$bp_dir/lib/gradle_build"
-source "$bp_dir/lib/maven_build"
+# shellcheck source=/dev/null
+source "${bp_dir}/lib/gradle_build"
+# shellcheck source=/dev/null
+source "${bp_dir}/lib/maven_build"
 build_choice="maven"
 if [ -f pom.xml ] && [ -f gradlew ]; then
     if [[ -f .build-choice ]]; then

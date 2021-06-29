@@ -35,6 +35,7 @@ version = "0.0.1"
 id = "drycc/go"
 version = "0.0.1"
 
+
 [[buildpacks]]
   id = "drycc/nodejs"
   version = "0.0.1"
@@ -44,6 +45,7 @@ version = "0.0.1"
 [[order.group]]
 id = "drycc/nodejs"
 version = "0.0.1"
+
 
 [[buildpacks]]
   id = "drycc/rust"
@@ -67,5 +69,5 @@ version = "0.0.1"
 
 [stack]
 id = "drycc-20"
-build-image = "registry.uucin.com/lijianguo/pack:20-build"
-run-image = "registry.uucin.com/lijianguo/pack:20"
+build-image = "drycc/pack:20-build"
+run-image = "drycc/pack:20"
