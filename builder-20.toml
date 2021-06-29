@@ -55,6 +55,16 @@ version = "0.0.1"
 id = "drycc/rust"
 version = "0.0.1"
 
+[[buildpacks]]
+  id = "drycc/java"
+  version = "0.0.1"
+  uri = "./buildpacks/java"
+
+[[order]]
+[[order.group]]
+id = "drycc/java"
+version = "0.0.1"
+
 [stack]
 id = "drycc-20"
 build-image = "registry.uucin.com/lijianguo/pack:20-build"
