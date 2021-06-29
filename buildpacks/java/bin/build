@@ -2,13 +2,17 @@
 set -eo pipefail
 
 echo "---> Java Buildpack"
-echo "ls: $(ls -lh)"
 arch="amd64"  # aarch64
 if [[ -f .arch_version ]]; then
     arch=$(< .arch_version tr -d '[:space:]')
 fi
 
 # 1. GET ARGS
+bp_dir=$(
+	cd "$(dirname "$0")"/..
+	pwd
+)
+echo "ls: $(ls -lh $bp_dir/lib/)"  # todo debug
 layers_dir=$1
 env_dir="$2/env"
 plan_path=$3
@@ -87,12 +91,23 @@ for var in "$layers_dir"/jdk/env/*; do
 done
 export PATH=${jdk_layer_dir}/bin:$PATH
 
-# 4. MAKE CACHE LAYER
-if [ -f pom.xml ]; then
-    source maven
+# 4. MAKE CACHE LAYER, RUN BUILD
+source "$bp_dir/lib/gradle_build"
+source "$bp_dir/lib/maven_build"
+build_choice="maven"
+if [ -f pom.xml ] && [ -f gradlew ]; then
+    if [[ -f .build-choice ]]; then
+        build_choice=$(< .build-choice tr -d '[:space:]')
+    fi
+elif [ -f pom.xml ] && [ ! -f gradlew ]; then
+    build_choice="maven"
+elif [ -f gradlew ] && [ ! -f pom.xml ]; then
+    build_choice="gradle"
+fi
+
+if [ "${build_choice}" == "maven" ]; then
     maven_build
-elif [ -f gradlew ]; then
-    source gradle
+elif [ "${build_choice}" == "gradle" ]; then
     gradle_build
 fi
 

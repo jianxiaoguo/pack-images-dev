@@ -56,23 +56,13 @@ id = "drycc/rust"
 version = "0.0.1"
 
 [[buildpacks]]
-  id = "drycc/java-maven"
+  id = "drycc/java"
   version = "0.0.1"
-  uri = "./buildpacks/java-maven"
+  uri = "./buildpacks/java"
 
 [[order]]
 [[order.group]]
-id = "drycc/java-maven"
-version = "0.0.1"
-
-[[buildpacks]]
-  id = "drycc/java-gradle"
-  version = "0.0.1"
-  uri = "./buildpacks/java-gradle"
-
-[[order]]
-[[order.group]]
-id = "drycc/java-gradle"
+id = "drycc/java"
 version = "0.0.1"
 
 [stack]
