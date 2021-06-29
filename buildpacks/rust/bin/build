@@ -57,7 +57,7 @@ export PATH="${CARGO_HOME}/bin:${PATH}"
 export CARGO_TARGET_DIR="${CARGO_HOME}/target"
 
 # todo debug
-cat > $CARGO_HOME/config << EOL
+cat > "${CARGO_HOME}/config" << EOL
 [source.crates-io]
 registry = "https://github.com/rust-lang/crates.io-index"
 
