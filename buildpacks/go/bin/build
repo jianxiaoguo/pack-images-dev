@@ -10,10 +10,7 @@ plan_path=$3
 # 2. DOWNLOAD go
 go_layer_dir="${layers_dir}/go"
 mkdir -p "${go_layer_dir}"
-arch="amd64"
-if [[ -f .arch_version ]]; then
-    arch=$(< .arch_version tr -d '[:space:]')
-fi
+arch=$(dpkg --print-architecture)  # amd64 arm64
 # determine go version provided during detection
 go_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "go") | .version')
 remote_go_version='not found'

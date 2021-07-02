@@ -65,6 +65,16 @@ version = "0.0.1"
 id = "drycc/java"
 version = "0.0.1"
 
+[[buildpacks]]
+  id = "drycc/php"
+  version = "0.0.1"
+  uri = "./buildpacks/php"
+
+[[order]]
+[[order.group]]
+id = "drycc/php"
+version = "0.0.1"
+
 [stack]
 id = "drycc-20"
 build-image = "registry.uucin.com/lijianguo/pack:20-build"

@@ -1,7 +1,7 @@
 # If DRYCC_REGISTRY is not set, try to populate it from legacy DEV_REGISTRY
 DEV_REGISTRY ?= docker.io
 
-SHELLCHECK_PREFIX := docker run -v ${CURDIR}:/workdir -w /workdir ${DEV_REGISTRY}/drycc/go-dev shellcheck
+SHELLCHECK_PREFIX := docker run --rm -v ${CURDIR}:/workdir -w /workdir ${DEV_REGISTRY}/drycc/go-dev shellcheck
 SHELL_SCRIPTS = $(shell find "buildpacks" -name '*.sh') $(shell find "rootfs" -name '*.sh') $(wildcard buildpacks/*/bin/*)
 
 SHELL=/bin/bash -o pipefail

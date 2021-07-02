@@ -10,9 +10,9 @@ plan_path=$3
 # 2. DOWNLOAD nodejs
 node_layer_dir="${layers_dir}/node"
 mkdir -p "${node_layer_dir}"
-arch="x64"
-if [[ -f .arch_version ]]; then
-    arch=$(< .arch_version tr -d '[:space:]')
+arch=$(dpkg --print-architecture)  # amd64 arm64
+if [[ ${arch} == "amd64" ]]; then
+    arch="x64"
 fi
 # determine nodejs version provided during detection
 node_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "nodejs") | .version')
@@ -54,8 +54,9 @@ else
   echo "---> Installing package.json with npm install."
   rm "${node_modules_layer_dir}" -rf
   npm install
-  if [[ -d "${node_modules_layer_dir}" && -n "$(ls -A "${node_modules_layer_dir}")" ]]; then
-			cp -r node_modules "${node_modules_layer_dir}/"
+  if [[ -d "${node_modules_layer_dir}" ]]; then
+      rm "${node_modules_layer_dir:?}/*" -rf
+			cp -r node_modules/. "${node_modules_layer_dir}/"
   fi
   cat > "${node_modules_layer_dir}.toml" <<EOL
 cache = true

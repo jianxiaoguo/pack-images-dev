@@ -2,11 +2,11 @@
 set -eo pipefail
 
 echo "---> Java Buildpack"
-arch="amd64"  # aarch64
-if [[ -f .arch_version ]]; then
-    arch=$(< .arch_version tr -d '[:space:]')
+#amd64 aarch64
+arch=$(dpkg --print-architecture)
+if [ "${arch}" == "arm64" ]; then
+    arch="aarch64"
 fi
-
 # 1. GET ARGS
 bp_dir=$(
 	cd "$(dirname "$0")"/..
