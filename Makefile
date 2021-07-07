@@ -1,4 +1,5 @@
 # If DRYCC_REGISTRY is not set, try to populate it from legacy DEV_REGISTRY
+STACK ?= 20
 DEV_REGISTRY ?= docker.io
 
 SHELLCHECK_PREFIX := docker run --rm -v ${CURDIR}:/workdir -w /workdir ${DEV_REGISTRY}/drycc/go-dev shellcheck

@@ -1,53 +1,5 @@
 #!/usr/bin/env bash
 
-# heroku
-## fail hard
-#set -o pipefail
-## fail harder
-#set -eu
-#
-#bp_dir=$(
-#	cd "$(dirname "$0")/.."
-#	pwd
-#) # absolute path
-#source_dir="${bp_dir}/target"
-#
-#layers_dir="${1:?}"
-#platform_dir="${2:?}"
-#
-## translate new stack ID to old stack ID
-#export STACK="$CNB_STACK_ID"
-#
-## copy the buildpack source into the target dir
-#target_dir="$(mktemp -d)/target"
-#cp -R "$source_dir" "$target_dir"
-#chmod -R +w "$target_dir"
-#
-## create a shim cache layer
-#cache_dir="${layers_dir}/shim"
-#mkdir -p "${cache_dir}"
-#echo "cache = true" >"${layers_dir}/shim.toml"
-#
-#"${target_dir}/bin/compile" "$(pwd)" "${cache_dir}" "${platform_dir}/env"
-#
-## copy profile.d scripts into a layer so they will be sourced
-#if [[ -d .profile.d ]]; then
-#	profile_dir="${layers_dir}/profile"
-#	mkdir -p "${profile_dir}/profile.d"
-#	cp .profile.d/* "${profile_dir}/profile.d/"
-#	echo "launch = true" >"${profile_dir}.toml"
-#fi
-#
-#if [[ -f "${target_dir}/export" ]]; then
-#	echo "build = true" >>"${profile_dir}.toml"
-#	mkdir -p "${profile_dir}/env.build/"
-#	"${bp_dir}/bin/exports" "${target_dir}/export" "${platform_dir}" "${profile_dir}/env.build/"
-#fi
-#
-## run bin/release, read Procfile, and generate launch.toml
-#"${bp_dir}/bin/release" "${target_dir}" "${layers_dir}" "${platform_dir}" "$(pwd)"
-#
-
 set -eo pipefail
 
 echo "---> PHP Buildpack"
@@ -96,7 +48,6 @@ export PATH="${php_layer_dir}/bin:${php_layer_dir}/sbin:${PATH}"
 # Compares previous composer.json checksum to the current composer.json
 vendor_layer_dir="${layers_dir}/vendor"
 mkdir -p "${vendor_layer_dir}"
-#vendor_layer_dir="${layers_dir}/composer"
 local_composer_checksum=$(sha256sum composer.json | cut -d ' ' -f 1 || echo 'not found')
 remote_composer_checksum="not found"
 if [[ -f "${vendor_layer_dir}.toml" ]]; then
@@ -134,7 +85,6 @@ if [[ -f "${nginx_layer_dir}.toml" ]]; then
 fi
 if [[ "${local_nginx_version}" == "${remote_nginx_version}" ]] ; then
   echo "---> Reusing nginx"
-  cp -r "${nginx_layer_dir}" "./nginx"
 else
   echo "---> Installing nginx"
   wget -q -O - "${nginx_url}" | tar -xzf - -C "${nginx_layer_dir}"
@@ -148,23 +98,20 @@ metadata = "${local_nginx_version}"
 EOL
 fi
 
-log_layer_dir="${layers_dir}/log"
-mkdir -p "${log_layer_dir}"
-
-mkdir "${nginx_layer_dir}/etc/" -p
 mkdir "${php_layer_dir}/config/" -p
-cp "${vendor_layer_dir}/heroku/heroku-buildpack-php/conf/php/php-fpm.conf" "${nginx_layer_dir}/etc/php-fpm.conf"
+rm -f "${nginx_layer_dir}/conf/nginx-php.conf"
 cp "${bp_dir}/config/nginx/base.conf" "${nginx_layer_dir}/conf/nginx-php.conf"
-echo "ls: $(ls -lh ${bp_dir}/config/)"
-echo "ls: $(ls -lh ${bp_dir}/config/php/)"
 cp "${bp_dir}/config/php/php.ini" "${php_layer_dir}/config/"
 cp "${bp_dir}/config/php/php-fpm-73.conf" "${php_layer_dir}/config/"
 cp "${bp_dir}/config/php/php-fpm.conf" "${php_layer_dir}/config/"
 
 cat > "run" <<SH
 #!/usr/bin/env bash
+mkdir -p "${layers_dir}/log"
+touch "${layers_dir}/log/php-fpm.log"
 php -c "${php_layer_dir}/config/php.ini"
-php-fpm -y "${php_layer_dir}/config/php-fpm.conf" -p "${nginx_layer_dir}" -g "/tmp/php-fpm.sock"
+#php-fpm -y "${php_layer_dir}/config/php-fpm.conf" -p "${nginx_layer_dir}" -g "/tmp/php-fpm.sock"
+php-fpm -y "${php_layer_dir}/config/php-fpm.conf" -p "${nginx_layer_dir}"
 nginx -p "${nginx_layer_dir}" -c "${nginx_layer_dir}/conf/nginx-php.conf"
 SH
 chmod +x "run"
