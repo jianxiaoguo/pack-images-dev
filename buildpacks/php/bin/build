@@ -12,12 +12,16 @@ bp_dir=$(
 	cd "$(dirname "$0")"/..
 	pwd
 )
-
+arch=$(dpkg --print-architecture)  # amd64 arm64
 # 2. DOWNLOAD PHP
 php_layer_dir="${layers_dir}/php"
-mkdir -p "${php_layer_dir}"
-s3_url="https://lang-php.s3.amazonaws.com/dist-heroku-20-stable/"
+mkdir -p "${php_layer_dir}/config/"
+
+#s3_url="https://lang-php.s3.amazonaws.com/dist-heroku-20-stable/"
+
+
 # determine php version provided during detection
+php_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "php") | .version')
 php_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "php") | .version')
 remote_php_version="not found"
 if [[ -f "${php_layer_dir}.toml" ]]; then
@@ -26,14 +30,14 @@ fi
 if [[ "${php_version}" == "${remote_php_version}" ]] ; then
   echo "---> Reusing php"
 else
-#  echo "---> Downloading and extracting php ${php_version}"
-  echo "---> Downloading and extracting php 7.4.20"
-  php_url="${s3_url}php-7.4.20.tar.gz"
-  composer_url="${s3_url}composer-1.10.22.tar.gz"
+  echo "---> Downloading and extracting php ${php_version}-${arch}"
+  php_url="https://buildpacks.drycc.cc/php/php-${php_version}-${arch}.tar.gz"
   wget -q -O - "${php_url}" | tar -xzf - -C "${php_layer_dir}"
-  wget -q -O - "${composer_url}" | tar -xzf - -C "${php_layer_dir}"
-#  php_url="https://www.php.net/distributions/php-${php_version}.tar.gz"
-#  wget -q -O - "${php_url}" | tar -xzf - --strip-components=1 -C "${php_layer_dir}"
+  rm -f php-${php_version}-${arch}.tar.gz
+  cp "${php_layer_dir}/sbin/php-fpm" "${php_layer_dir}/bin"
+  "${php_layer_dir}"/bin/php -r "copy('https://install.phpcomposer.com/installer', 'composer-setup.php');"
+  "${php_layer_dir}"/bin/php composer-setup.php --install-dir="${php_layer_dir}/bin/"
+  mv "${php_layer_dir}/bin/composer.phar" "${php_layer_dir}/bin/composer"
   cat > "${php_layer_dir}.toml" <<EOL
 cache = true
 launch = true
@@ -41,14 +45,15 @@ metadata = "${php_version}"
 EOL
 fi
 
+echo "---> Config php-fpm"
+cp -f "${bp_dir}/config/php/"* "${php_layer_dir}/config/"
+
 # 3. MAKE PHP AVAILABLE TO THIS SCRIPT
-cp "${php_layer_dir}/sbin/php-fpm" "${php_layer_dir}/bin"
 export PATH="${php_layer_dir}/bin:${php_layer_dir}/sbin:${PATH}"
 
 # Compares previous composer.json checksum to the current composer.json
 vendor_layer_dir="${layers_dir}/vendor"
 mkdir -p "${vendor_layer_dir}"
-#vendor_layer_dir="${layers_dir}/composer"
 local_composer_checksum=$(sha256sum composer.json | cut -d ' ' -f 1 || echo 'not found')
 remote_composer_checksum="not found"
 if [[ -f "${vendor_layer_dir}.toml" ]]; then
@@ -63,7 +68,7 @@ if [[ -f composer.json && "${local_composer_checksum}" == "${remote_composer_che
   cp -r "${vendor_layer_dir}" "./vendor"
 else
   echo "---> Installing composer.json"
-  composer install
+  composer install --ignore-platform-reqs
   if [[ -d "${vendor_layer_dir}" ]]; then
     rm "${vendor_layer_dir:?}/*" -rf
 		cp -r vendor/. "${vendor_layer_dir}/"
@@ -75,48 +80,23 @@ metadata = "${local_composer_checksum}"
 EOL
 fi
 
+echo "---> Config nginx"
 nginx_layer_dir="${layers_dir}/nginx"
-mkdir -p "${nginx_layer_dir}"
-
-nginx_url="https://storage.gra.cloud.ovh.net/v1/AUTH_be65d32d71a6435589a419eac98613f2/scalingo-php-buildpack/scalingo-18/package/nginx-1.18.0.tgz"
-local_nginx_version="1.18.0"
-remote_nginx_version="not found"
-if [[ -f "${nginx_layer_dir}.toml" ]]; then
-    remote_nginx_version=$(< "${nginx_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
-fi
-if [[ "${local_nginx_version}" == "${remote_nginx_version}" ]] ; then
-  echo "---> Reusing nginx"
-else
-  echo "---> Installing nginx"
-  wget -q -O - "${nginx_url}" | tar -xzf - -C "${nginx_layer_dir}"
-  mkdir "${nginx_layer_dir}/bin/"
-  cp "${nginx_layer_dir}/sbin/nginx" "${nginx_layer_dir}/bin/nginx"
-
+mkdir -p "${layers_dir}/nginx/"logs
+cp -r /etc/nginx/* ${nginx_layer_dir}
+cp "${bp_dir}/config/nginx/base.conf" "${nginx_layer_dir}/nginx-php.conf"
 cat > "${nginx_layer_dir}.toml"<<EOL
 cache = true
 launch = true
-metadata = "${local_nginx_version}"
 EOL
-fi
-
-mkdir "${php_layer_dir}/config/" -p
-rm -f "${nginx_layer_dir}/conf/nginx-php.conf"
-cp "${bp_dir}/config/nginx/base.conf" "${nginx_layer_dir}/conf/nginx-php.conf"
-echo "$(cat "${bp_dir}/config/nginx/base.conf")"
-echo "ls: $(ls -lh ${bp_dir}/config/)"
-echo "ls: $(ls -lh ${bp_dir}/config/php/)"
-cp "${bp_dir}/config/php/php.ini" "${php_layer_dir}/config/"
-cp "${bp_dir}/config/php/php-fpm-73.conf" "${php_layer_dir}/config/"
-cp "${bp_dir}/config/php/php-fpm.conf" "${php_layer_dir}/config/"
 
 cat > "run" <<SH
 #!/usr/bin/env bash
-mkdir -p "${layers_dir}/log"
+mkdir -p "${layers_dir}/log" /tmp/nginx/logs/
 touch "${layers_dir}/log/php-fpm.log"
 php -c "${php_layer_dir}/config/php.ini"
-#php-fpm -y "${php_layer_dir}/config/php-fpm.conf" -p "${nginx_layer_dir}" -g "/tmp/php-fpm.sock"
-php-fpm -y "${php_layer_dir}/config/php-fpm.conf" -p "${nginx_layer_dir}"
-nginx -p "${nginx_layer_dir}" -c "${nginx_layer_dir}/conf/nginx-php.conf"
+php-fpm -y "${php_layer_dir}/config/php-fpm.conf" -p "${php_layer_dir}"
+nginx -p "${nginx_layer_dir}" -c "${nginx_layer_dir}/nginx-php.conf"
 SH
 chmod +x "run"
 
