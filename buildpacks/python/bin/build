@@ -6,7 +6,7 @@ echo "---> Python Buildpack"
 # 1. GET ARGS
 layers_dir=$1
 plan_path=$3
-
+arch=$(dpkg --print-architecture)  # amd64 arm64
 # 2. DOWNLOAD PYTHON
 python_layer_dir="${layers_dir}/python"
 mkdir -p "${python_layer_dir}"
@@ -21,7 +21,8 @@ if [[ "${python_version}" == "${remote_python_version}" ]] ; then
   echo "---> Reusing python"
 else
   echo "---> Downloading and extracting Python ${python_version}"
-  python_url=https://buildpacks.drycc.cc/python/${CNB_STACK_ID}/runtimes/python-${python_version}.tar.gz
+  python_url="https://buildpacks.drycc.cc/python/python-${python_version}-${arch}.tar.gz"
+#  python_url=https://buildpacks.drycc.cc/python/${CNB_STACK_ID}/runtimes/python-${python_version}.tar.gz
   wget -q -O - "${python_url}" | tar -xzf - -C "${python_layer_dir}"
   cat > "${python_layer_dir}.toml" <<EOL
 cache = true

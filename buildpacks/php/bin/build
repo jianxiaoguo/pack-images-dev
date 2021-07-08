@@ -22,7 +22,6 @@ mkdir -p "${php_layer_dir}/config/"
 
 # determine php version provided during detection
 php_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "php") | .version')
-php_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "php") | .version')
 remote_php_version="not found"
 if [[ -f "${php_layer_dir}.toml" ]]; then
     remote_php_version=$(< "${php_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
@@ -33,7 +32,7 @@ else
   echo "---> Downloading and extracting php ${php_version}-${arch}"
   php_url="https://buildpacks.drycc.cc/php/php-${php_version}-${arch}.tar.gz"
   wget -q -O - "${php_url}" | tar -xzf - -C "${php_layer_dir}"
-  rm -f php-${php_version}-${arch}.tar.gz
+  rm -f "php-${php_version}-${arch}.tar.gz"
   cp "${php_layer_dir}/sbin/php-fpm" "${php_layer_dir}/bin"
   "${php_layer_dir}"/bin/php -r "copy('https://install.phpcomposer.com/installer', 'composer-setup.php');"
   "${php_layer_dir}"/bin/php composer-setup.php --install-dir="${php_layer_dir}/bin/"
@@ -83,7 +82,7 @@ fi
 echo "---> Config nginx"
 nginx_layer_dir="${layers_dir}/nginx"
 mkdir -p "${layers_dir}/nginx/"logs
-cp -r /etc/nginx/* ${nginx_layer_dir}
+cp -r /etc/nginx/* "${nginx_layer_dir}"
 cp "${bp_dir}/config/nginx/base.conf" "${nginx_layer_dir}/nginx-php.conf"
 cat > "${nginx_layer_dir}.toml"<<EOL
 cache = true

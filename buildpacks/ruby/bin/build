@@ -10,7 +10,7 @@ plan_path=$3
 # 2. DOWNLOAD RUBY
 ruby_layer_dir="${layers_dir}/ruby"
 mkdir -p "${ruby_layer_dir}"
-
+#arch=$(dpkg --print-architecture)  # amd64 arm64
 # determine ruby version provided during detection
 ruby_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "ruby") | .version')
 remote_ruby_version="not found"
@@ -21,6 +21,7 @@ if [[ "${ruby_version}" == "${remote_ruby_version}" ]] ; then
   echo "---> Reusing ruby"
 else
   echo "---> Downloading and extracting Ruby ${ruby_version}"
+#  ruby_url="https://buildpacks.drycc.cc/ruby/ruby-${ruby_version}-${arch}.tar.gz"
   ruby_url=https://buildpacks.drycc.cc/ruby/${CNB_STACK_ID}/ruby-${ruby_version}.tgz
   wget -q -O - "${ruby_url}" | tar -xzf - -C "${ruby_layer_dir}"
   cat > "${ruby_layer_dir}.toml" <<EOL

@@ -1,7 +1,7 @@
 # Ruby Buildpack
 
 Compatible apps:
-- Ruby apps that use Bundler
+- Ruby apps that use Bundler, ruby version in 2.5.9 2.6.7 2.7.3 3.0.1.
 
 ### Usage
 
