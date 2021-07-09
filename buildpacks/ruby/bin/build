@@ -10,9 +10,16 @@ plan_path=$3
 # 2. DOWNLOAD RUBY
 ruby_layer_dir="${layers_dir}/ruby"
 mkdir -p "${ruby_layer_dir}"
-#arch=$(dpkg --print-architecture)  # amd64 arm64
+arch=$(dpkg --print-architecture)  # amd64 arm64
+
+ruby_arch=x86_64
+if [ "${arch}" == "arm64" ]; then
+    ruby_arch=aarch64
+fi
+
 # determine ruby version provided during detection
 ruby_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "ruby") | .version')
+bin_version=${ruby_version:0:4}0
 remote_ruby_version="not found"
 if [[ -f "${ruby_layer_dir}.toml" ]]; then
     remote_ruby_version=$(< "${ruby_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
@@ -21,16 +28,36 @@ if [[ "${ruby_version}" == "${remote_ruby_version}" ]] ; then
   echo "---> Reusing ruby"
 else
   echo "---> Downloading and extracting Ruby ${ruby_version}"
-#  ruby_url="https://buildpacks.drycc.cc/ruby/ruby-${ruby_version}-${arch}.tar.gz"
-  ruby_url=https://buildpacks.drycc.cc/ruby/${CNB_STACK_ID}/ruby-${ruby_version}.tgz
+  ruby_url="https://buildpacks.drycc.cc/ruby/ruby-${ruby_version}-${arch}.tar.gz"
   wget -q -O - "${ruby_url}" | tar -xzf - -C "${ruby_layer_dir}"
   cat > "${ruby_layer_dir}.toml" <<EOL
 cache = true
 launch = true
 metadata = "${ruby_version}"
 EOL
-fi
+# shellcheck disable=SC2006
+for file in `(ls "${ruby_layer_dir}/bin/")`
+do
+  if [ "${file}" != 'ruby' ]; then
+    sed -ir 's/\#\!\/usr\/local\/bin\/ruby/\#\!\/layers\/drycc_ruby\/ruby\/bin\/ruby/g' "${ruby_layer_dir}/bin/${file}"
+  fi
+done
 
+if [ ! -s "${ruby_layer_dir}"/profile.d/ruby.sh ]; then
+  mkdir "${ruby_layer_dir}"/profile.d
+  cat > "${ruby_layer_dir}"/profile.d/ruby.sh <<EOL
+export PATH="${ruby_layer_dir}/bin:${PATH}"
+export C_INCLUDE_PATH="${C_INCLUDE_PATH}:${ruby_layer_dir}/include"
+export CPLUS_INCLUDE_PATH="${C_INCLUDE_PATH}:${ruby_layer_dir}/include"
+export LIBRARY_PATH="${LD_LIBRARY_PATH}:${ruby_layer_dir}/lib"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${ruby_layer_dir}/lib"
+export RUBYLIB="${ruby_layer_dir}/lib/ruby/${bin_version}/${ruby_arch}-linux/:${ruby_layer_dir}/lib/ruby/${bin_version}"
+export GEM_PATH="${ruby_layer_dir}/lib/ruby/gems/"
+export GEM_HOME="${ruby_layer_dir}/lib/ruby/gems/"
+export RUBYPATH="${ruby_layer_dir}/bin/"
+EOL
+fi
+fi
 
 # 3. MAKE RUBY AVAILABLE TO THIS SCRIPT
 export PATH="${ruby_layer_dir}/bin:${PATH}"
@@ -38,6 +65,10 @@ export C_INCLUDE_PATH="${C_INCLUDE_PATH}:${ruby_layer_dir}/include"
 export CPLUS_INCLUDE_PATH="${C_INCLUDE_PATH}:${ruby_layer_dir}/include"
 export LIBRARY_PATH="${LD_LIBRARY_PATH}:${ruby_layer_dir}/lib"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${ruby_layer_dir}/lib"
+export RUBYLIB="${ruby_layer_dir}/lib/ruby/${bin_version}/${ruby_arch}-linux/:${ruby_layer_dir}/lib/ruby/${bin_version}"
+export GEM_PATH="${ruby_layer_dir}/lib/ruby/gems/"
+export GEM_HOME="${ruby_layer_dir}/lib/ruby/gems/"
+export RUBYPATH="${ruby_layer_dir}/bin/"
 
 # Compares previous Gemfile.lock checksum to the current Gemfile.lock
 bundler_layer_dir="${layers_dir}/bundler"
