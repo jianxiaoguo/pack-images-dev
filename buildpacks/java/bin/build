@@ -49,7 +49,7 @@ jdk_url="$(get_jdk_url)"
 # If it doesn't exist locally, create a JDK cache layer
 # This makes JDK available to subsequent buildpacks as well
 jdk_layer_dir=${layers_dir}/jdk
-if [[ -f ${jdk_layer_dir}.toml ]]; then
+if [[ -f "${jdk_layer_dir}.toml" ]]; then
   cached_jdk_url=$(< "${jdk_layer_dir}.toml" yj -t | jq -r .metadata.url 2>/dev/null || echo 'JDK TOML parsing failed')
 fi
 
@@ -67,10 +67,10 @@ version = "${version}"
 EOF
 
   echo "${layers_dir}"/jdk > "${layers_dir}"/jdk/env/JAVA_HOME
-  if [[ -z ${LD_LIBRARY_PATH} ]]; then
+  if [[ -z "${LD_LIBRARY_PATH}" ]]; then
     echo "${JAVA_HOME}/jre/lib/${arch}/server" > "${jdk_layer_dir}/env/LD_LIBRARY_PATH"
   else
-    echo "${JAVA_HOME}/jre/lib/${arch}/server:${LD_LIBRARY_PATH}" > "${jdk_layer_dir}/env/LD_LIBRARY_PATH"
+    echo "${JAVA_HOME}/jre/lib/${arch}/server:${LD_LIBRARY_PATH}" > "${jdk_layer_dir}"/env/LD_LIBRARY_PATH
   fi
 
   mkdir -p "${jdk_layer_dir}/profile.d"
