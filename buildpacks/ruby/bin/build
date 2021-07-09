@@ -11,11 +11,7 @@ plan_path=$3
 ruby_layer_dir="${layers_dir}/ruby"
 mkdir -p "${ruby_layer_dir}"
 arch=$(dpkg --print-architecture)  # amd64 arm64
-
-ruby_arch=x86_64
-if [ "${arch}" == "arm64" ]; then
-    ruby_arch=aarch64
-fi
+ruby_arch=$(uname -m)  # x86_64 aarch64
 
 # determine ruby version provided during detection
 ruby_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "ruby") | .version')
@@ -35,7 +31,6 @@ cache = true
 launch = true
 metadata = "${ruby_version}"
 EOL
-# shellcheck disable=SC2006
 for file in `(ls "${ruby_layer_dir}/bin/")`
 do
   if [ "${file}" != 'ruby' ]; then

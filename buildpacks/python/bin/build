@@ -29,37 +29,24 @@ cache = true
 launch = true
 metadata = "${python_version}"
 EOL
-fi
-
-# bootstraps pip / setuptools.
-pip_layer_dir="${layers_dir}/pip"
-mkdir -p "${pip_layer_dir}"
-PIP_VERSION='20.2.4'
-SETUPTOOLS_VERSION='47.1.1'
-WHEEL_VERSION='0.36.2'
-PIP_WHEEL_FILENAME="pip-${PIP_VERSION}-py2.py3-none-any.whl"
-PIP_WHEEL_URL=https://buildpacks.drycc.cc/python/common/${PIP_WHEEL_FILENAME}
-PIP_WHEEL="${pip_layer_dir}/${PIP_WHEEL_FILENAME}"
-
-remote_pip_version='not found'
-if [[ -f "${pip_layer_dir}.toml" ]]; then
-    remote_pip_version=$(< "${pip_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
-fi
-if [[ "${PIP_VERSION}" == "${remote_pip_version}" ]] ; then
-  echo "---> Reusing pip"
-else
-  echo "---> Installing pip ${PIP_VERSION}, setuptools ${SETUPTOOLS_VERSION} and wheel ${WHEEL_VERSION}"
-  if ! curl -sSf "${PIP_WHEEL_URL}" -o "${PIP_WHEEL}"; then
-    echo "!    Failed to download pip"
-    exit 1
+for file in `(ls "${python_layer_dir}/bin/")`
+do
+  if [ "${file}" == 'pip' ]; then
+    sed -ir 's/\#\!\/usr\/local\/bin\/python/\#\!\/layers\/drycc_python\/python\/bin\/python/g' "${python_layer_dir}/bin/${file}"
   fi
-  "${python_layer_dir}"/bin/python "${PIP_WHEEL}/pip" install --quiet --disable-pip-version-check --no-cache \
-  "${PIP_WHEEL}" setuptools=="${SETUPTOOLS_VERSION}" wheel=="${WHEEL_VERSION}"
-  cat > "${pip_layer_dir}.toml" <<EOL
-cache = true
-launch = true
-metadata = "${PIP_VERSION}"
+done
+
+if [ ! -s "${python_layer_dir}"/profile.d/python.sh ]; then
+  mkdir "${python_layer_dir}"/profile.d
+  cat > "${python_layer_dir}"/profile.d/python.sh <<EOL
+export PATH="${python_layer_dir}/bin:${PATH}"
+export C_INCLUDE_PATH="${python_layer_dir}/include:${C_INCLUDE_PATH}"
+export CPLUS_INCLUDE_PATH="${python_layer_dir}/include:${C_INCLUDE_PATH}"
+export LIBRARY_PATH="${python_layer_dir}/lib:${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${python_layer_dir}/lib:${LD_LIBRARY_PATH}"
+export PKG_CONFIG_PATH="${python_layer_dir}/lib/pkg-config:${PKG_CONFIG_PATH}"
 EOL
+fi
 fi
 
 # 3. MAKE python and pip AVAILABLE TO THIS SCRIPT
@@ -83,7 +70,8 @@ if [[ -f requirements.txt && "${local_requirements_checksum}" == "${remote_requi
   echo "---> Reusing requirements"
 else
   echo "---> Installing requirements with pip"
-  "${python_layer_dir}"/bin/pip install -r requirements.txt \
+#  "${python_layer_dir}"/bin/pip install -r requirements.txt \
+  python -m pip install -r requirements.txt \
   --exists-action=w --src="${python_layer_dir}"/src \
   --disable-pip-version-check --no-cache-dir
   cat > "${requirements_layer_dir}.toml" <<EOL

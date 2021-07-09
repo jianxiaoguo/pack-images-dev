@@ -10,7 +10,7 @@ fi
 plan_path=$2
 
 # 3. GET CONFIGURATION
-version=3.9.5
+version=3.9.6
 if [[ -f .python_version ]]; then
     version=$(< .python_version tr -d '[:space:] | python-')
 fi
