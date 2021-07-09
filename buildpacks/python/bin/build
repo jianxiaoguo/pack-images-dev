@@ -32,7 +32,7 @@ EOL
 for file in `(ls "${python_layer_dir}/bin/")`
 do
   if [ "${file}" == 'pip' ]; then
-    sed -ir 's/\#\!\/usr\/local\/bin\/python/\#\!\/layers\/drycc_python\/python\/bin\/python/g' "${python_layer_dir}/bin/${file}"
+    sed -ir 's/\#\!\/usr\/local\/bin\/python/\#\!\/usr\/bin\/env\ python/g' "${python_layer_dir}/bin/${file}"
   fi
 done
 

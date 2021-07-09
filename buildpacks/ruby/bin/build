@@ -34,7 +34,7 @@ EOL
 for file in `(ls "${ruby_layer_dir}/bin/")`
 do
   if [ "${file}" != 'ruby' ]; then
-    sed -ir 's/\#\!\/usr\/local\/bin\/ruby/\#\!\/layers\/drycc_ruby\/ruby\/bin\/ruby/g' "${ruby_layer_dir}/bin/${file}"
+    sed -ir 's/\#\!\/usr\/local\/bin\/ruby/\#\!\/usr\/bin\/env\ ruby/g' "${ruby_layer_dir}/bin/${file}"
   fi
 done
 
