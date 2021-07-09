@@ -1,4 +1,4 @@
-description = "Base builder for 20 stack, based on ubuntu:20.04 base image"
+description = "Base builder for 18 stack, based on ubuntu:18.04 base image"
 
 [lifecycle]
 version = "0.11.3"
@@ -76,6 +76,6 @@ id = "drycc/php"
 version = "0.0.1"
 
 [stack]
-id = "drycc-20"
-build-image = "drycc/pack:20-build"
-run-image = "drycc/pack:20"
+id = "drycc-18"
+build-image = "drycc/pack:18-build"
+run-image = "drycc/pack:18"
