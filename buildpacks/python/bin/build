@@ -48,6 +48,16 @@ export PKG_CONFIG_PATH="${python_layer_dir}/lib/pkg-config:${PKG_CONFIG_PATH}"
 EOL
 fi
 fi
+if [ "${PIP_INDEX_URL}" ]; then
+  tee >> "${python_layer_dir}"/profile.d/python.sh << EOF
+python -m pip  config set global.index-url "${PIP_INDEX_URL}"
+EOF
+fi
+if [ "${PIP_EXTRA_INDEX_URL}" ]; then
+  tee >> "${python_layer_dir}"/profile.d/python.sh << EOF
+python -m pip  config set global.index-url "${PIP_INDEX_URL}"
+EOF
+fi
 
 # 3. MAKE python and pip AVAILABLE TO THIS SCRIPT
 export PATH="${python_layer_dir}/bin:${PATH}"
@@ -65,6 +75,15 @@ if [[ -f "${requirements_layer_dir}.toml" ]]; then
     remote_requirements_checksum=$(< "${requirements_layer_dir}.toml" yj -t | jq -r .metadata 2>/dev/null || echo 'not found')
 fi
 mkdir -p "${requirements_layer_dir}"
+
+if [ "${PIP_INDEX_URL}" ]; then
+  echo "---> Setting pip index-url with ${PIP_INDEX_URL}"
+  python -m pip  config set global.index-url "${PIP_INDEX_URL}"
+fi
+if [ "${PIP_EXTRA_INDEX_URL}" ]; then
+  echo "---> Setting pip extra-index-url with ${PIP_EXTRA_INDEX_URL}"
+  python -m pip  config set global.extra-index-url "${PIP_EXTRA_INDEX_URL}"
+fi
 
 if [[ -f requirements.txt && "${local_requirements_checksum}" == "${remote_requirements_checksum}" ]] ; then
   echo "---> Reusing requirements"
