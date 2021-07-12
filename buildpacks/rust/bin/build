@@ -56,24 +56,10 @@ fi
 export PATH="${CARGO_HOME}/bin:${PATH}"
 export CARGO_TARGET_DIR="${CARGO_HOME}/target"
 
-# todo debug
-cat > "${CARGO_HOME}/config" << EOL
-[source.crates-io]
-registry = "https://github.com/rust-lang/crates.io-index"
-
-replace-with = 'ustc'
-
-[source.tuna]
-registry = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git"
-[source.ustc]
-registry = "git://mirrors.ustc.edu.cn/crates.io-index"
-[source.sjtu]
-registry = "https://mirrors.sjtug.sjtu.edu.cn/git/crates.io-index"
-[source.rustcc]
-registry = "git://crates.rustcc.cn/crates.io-index"
-EOL
-
 echo "-----> Building application using Cargo"
+if [ -s .cargo/config ]; then
+    cp -f .cargo/config "${CARGO_HOME}/config"
+fi
 rm -rf target/
 cargo build $RUST_CARGO_BUILD_FLAGS
 mkdir -p target/release

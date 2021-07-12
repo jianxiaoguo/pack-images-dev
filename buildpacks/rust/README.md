@@ -1,7 +1,8 @@
 # rust Buildpack
 
 Compatible apps:
-- Rust apps that use Cargo
+- Rust apps that use Cargo.
+  Config .cargo/config in project. Replace update download source.
 
 ### Usage
 
