@@ -31,6 +31,7 @@ cache = true
 launch = true
 metadata = "${ruby_version}"
 EOL
+# shellcheck disable=SC2006
 for file in `(ls "${ruby_layer_dir}/bin/")`
 do
   if [ "${file}" != 'ruby' ]; then

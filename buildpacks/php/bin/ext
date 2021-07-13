@@ -3,6 +3,7 @@
 
 install_xdebug() {
   echo "---> Installing extension xdebug"
+  # shellcheck disable=SC2154
   if [ ! -e "${php_layer_dir}/ext/xdebug.so" ]; then
     pecl install xdebug
     docker-php-ext-enable --ini-name "${php_layer_dir}"/config/php.ini xdebug.so

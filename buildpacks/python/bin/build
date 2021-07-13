@@ -29,6 +29,7 @@ cache = true
 launch = true
 metadata = "${python_version}"
 EOL
+# shellcheck disable=SC2006
 for file in `(ls "${python_layer_dir}/bin/")`
 do
   if [ "${file}" == 'pip' ]; then

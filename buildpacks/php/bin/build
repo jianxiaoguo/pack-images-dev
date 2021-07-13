@@ -72,6 +72,7 @@ pecl config-set ext_dir "${php_layer_dir}"/ext
 pecl config-set doc_dir "${php_layer_dir}"/docs
 
 # Install extensions
+# shellcheck disable=SC1090
 source "$bp_dir/bin/ext"
 install_xdebug
 install_gd
