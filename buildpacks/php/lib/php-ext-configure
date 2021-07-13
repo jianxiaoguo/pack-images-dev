@@ -11,9 +11,9 @@ srcExists=
 if [ -d "${php_layer_dir}"/src/php ]; then
 	srcExists=1
 fi
-docker-php-source extract
+php-source extract
 if [ -z "$srcExists" ]; then
-	touch "${php_layer_dir}"/src/.docker-delete-me
+	touch "${php_layer_dir}"/src/.delete-me
 fi
 
 cd "${php_layer_dir}"/src/php/ext

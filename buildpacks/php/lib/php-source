@@ -18,10 +18,10 @@ case "$1" in
 	extract)
 	  echo "source php_layer_dir ${php_layer_dir}"
 		mkdir -p "$dir"
-		if [ ! -f "$dir/.docker-extracted" ]; then
+		if [ ! -f "$dir/.extracted" ]; then
 		  php_url=https://www.php.net/distributions/php-"${php_version}".tar.xz
       wget -q -O - "${php_url}" | tar -xJf - --strip-components=1 -C "${dir}"
-			touch "$dir/.docker-extracted"
+			touch "$dir/.extracted"
 		fi
 		;;
 

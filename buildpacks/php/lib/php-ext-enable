@@ -76,8 +76,8 @@ if [ "$pm" = 'apk' ]; then
 		&& ! apk info --installed .phpize-deps > /dev/null \
 		&& ! apk info --installed .phpize-deps-configure > /dev/null \
 	; then
-		apk add --no-cache --virtual '.docker-php-ext-enable-deps' binutils
-		apkDel='.docker-php-ext-enable-deps'
+		apk add --no-cache --virtual '.php-ext-enable-deps' binutils
+		apkDel='.php-ext-enable-deps'
 	fi
 fi
 
@@ -110,7 +110,7 @@ for module in $modules; do
 			ini="$iniName"
 			;;
 		*)
-			ini="$PHP_INI_DIR/conf.d/${iniName:-"docker-php-ext-$ext.ini"}"
+			ini="$PHP_INI_DIR/conf.d/${iniName:-"php-ext-$ext.ini"}"
 			;;
 	esac
 	if ! grep -qFx -e "$line" -e "$line.so" "$ini" 2>/dev/null; then
