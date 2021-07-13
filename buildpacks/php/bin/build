@@ -15,10 +15,7 @@ bp_dir=$(
 arch=$(dpkg --print-architecture)  # amd64 arm64
 # 2. DOWNLOAD PHP
 php_layer_dir="${layers_dir}/php"
-mkdir -p "${php_layer_dir}/config/"
-
-#s3_url="https://lang-php.s3.amazonaws.com/dist-heroku-20-stable/"
-
+mkdir -p "${php_layer_dir}"/{config,docs,ext}
 
 # determine php version provided during detection
 php_version=$(< "${plan_path}" yj -t | jq -r '.entries[] | select(.name == "php") | .version')
@@ -42,13 +39,44 @@ cache = true
 launch = true
 metadata = "${php_version}"
 EOL
+if [ ! -s "${php_layer_dir}"/profile.d/php.sh ]; then
+  mkdir "${php_layer_dir}"/profile.d
+  cat > "${php_layer_dir}"/profile.d/php.sh <<EOL
+export PATH="${php_layer_dir}/bin:${php_layer_dir}/sbin:${PATH}"
+export PHP_PEAR_INSTALL_DIR="${php_layer_dir}/lib/php"
+export PHP_PEAR_PHP_BIN="${php_layer_dir}/bin/php"
+export php_layer_dir="${php_layer_dir}"
+echo "Config pecl"
+pecl config-set php_dir "${php_layer_dir}"
+pecl config-set ext_dir "${php_layer_dir}"/ext
+pecl config-set doc_dir "${php_layer_dir}"/docs
+pecl config-set bin_dir "${php_layer_dir}"/bin
+EOL
 fi
-
 echo "---> Config php-fpm"
 cp -f "${bp_dir}/config/php/"* "${php_layer_dir}/config/"
+cp -f "${bp_dir}"/lib/* "${php_layer_dir}/bin/"
+mv -f "${php_layer_dir}"/bin/Builder.php "${php_layer_dir}"/lib/php/PEAR/Builder.php
+fi
 
 # 3. MAKE PHP AVAILABLE TO THIS SCRIPT
 export PATH="${php_layer_dir}/bin:${php_layer_dir}/sbin:${PATH}"
+export PHP_PEAR_INSTALL_DIR="${php_layer_dir}/lib/php"
+export PHP_PEAR_PHP_BIN="${php_layer_dir}/bin/php"
+export php_layer_dir="${php_layer_dir}"
+export php_version="${php_version}"
+
+echo "---> Config pecl"
+pecl config-set php_dir "${php_layer_dir}"
+pecl config-set ext_dir "${php_layer_dir}"/ext
+pecl config-set doc_dir "${php_layer_dir}"/docs
+
+# Install extensions
+# shellcheck disable=SC1090
+source "$bp_dir/bin/ext"
+install_xdebug
+install_gd
+
 
 # Compares previous composer.json checksum to the current composer.json
 vendor_layer_dir="${layers_dir}/vendor"
@@ -93,8 +121,7 @@ cat > "run" <<SH
 #!/usr/bin/env bash
 mkdir -p "${layers_dir}/log" /tmp/nginx/logs/
 touch "${layers_dir}/log/php-fpm.log"
-php -c "${php_layer_dir}/config/php.ini"
-php-fpm -y "${php_layer_dir}/config/php-fpm.conf" -p "${php_layer_dir}"
+php-fpm -c "${php_layer_dir}/config/php.ini" -y "${php_layer_dir}/config/php-fpm.conf" -p "${php_layer_dir}"
 nginx -p "${nginx_layer_dir}" -c "${nginx_layer_dir}/nginx-php.conf"
 SH
 chmod +x "run"
