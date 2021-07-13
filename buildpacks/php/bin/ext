@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+
+install_xdebug() {
+  echo "---> Installing extension xdebug"
+  if [ ! -e "${php_layer_dir}/ext/xdebug.so" ]; then
+    pecl install xdebug
+    docker-php-ext-enable --ini-name "${php_layer_dir}"/config/php.ini xdebug.so
+  fi
+}
+
+install_gd() {
+  echo "---> Installing extension gd"
+  if [ ! -e "${php_layer_dir}/ext/gd.so" ]; then
+    docker-php-ext-configure gd --with-php-config="${php_layer_dir}"/bin/php-config
+    INSTALL_ROOT="${php_layer_dir}" docker-php-ext-install --ini-name "${php_layer_dir}"/config/php.ini gd
+  fi
+}

@@ -8,5 +8,6 @@ else
 fi
 
 curl -o /usr/local/bin/yj \
-  -L "https://github.com/sclevine/yj/releases/download/v5.0.0/$name"
+  -L https://kubernetes-release.uucin.com/drycc/$name
+#  -L "https://github.com/sclevine/yj/releases/download/v5.0.0/$name"
 chmod +x /usr/local/bin/yj
