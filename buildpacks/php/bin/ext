@@ -14,6 +14,6 @@ install_gd() {
   echo "---> Installing extension gd"
   if [ ! -e "${php_layer_dir}/ext/gd.so" ]; then
     php-ext-configure gd --with-php-config="${php_layer_dir}"/bin/php-config
-    INSTALL_ROOT="${php_layer_dir}" php-ext-install --ini-name "${php_layer_dir}"/config/php.ini gd.so
+    INSTALL_ROOT="${php_layer_dir}" php-ext-install --ini-name "${php_layer_dir}"/config/php.ini gd
   fi
 }
