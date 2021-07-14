@@ -4,26 +4,26 @@ VERSION ?= ${STACK}
 DEV_REGISTRY ?= docker.io
 DRYCC_REGISTRY ?= ${DEV_REGISTRY}
 
-SHELLCHECK_PREFIX := docker run --rm -v ${CURDIR}:/workdir -w /workdir ${DEV_REGISTRY}/drycc/go-dev shellcheck
+SHELLCHECK_PREFIX := docker run --rm -v ${CURDIR}:/workdir -w /workdir ${DRYCC_REGISTRY}/drycc/go-dev shellcheck
 SHELL_SCRIPTS = $(shell find "buildpacks" -name '*.sh') $(shell find "rootfs" -name '*.sh') $(wildcard buildpacks/*/bin/*)
 
 SHELL=/bin/bash -o pipefail
 
-build-pack:
+pack:
 	@docker build --pull -f Dockerfile.build --build-arg STACK=drycc-${STACK} --build-arg BASE_IMAGE=registry.uucin.com/lijianguo/stack-images:${STACK}-build -t registry.uucin.com/lijianguo/pack:${VERSION}-build .
 	@docker build --pull -f Dockerfile.run --build-arg STACK=drycc-${STACK} --build-arg BASE_IMAGE=registry.uucin.com/lijianguo/stack-images:${STACK} -t registry.uucin.com/lijianguo/pack:${VERSION} .
 
-publish-pack: build-pack
+publish-pack: pack
 	@docker push registry.uucin.com/lijianguo/stack-images:${VERSION}-build
 	@docker push registry.uucin.com/lijianguo/stack-images:${VERSION}
 
-buildpacks:
+buildpack:
 	@pack builder create registry.uucin.com/lijianguo/buildpacks:${VERSION} --config builder-${STACK}.toml --pull-policy if-not-present
 
-publish-buildpacks: buildpacks
+publish-buildpack: buildpack
 	@docker push registry.uucin.com/lijianguo/buildpacks:${VERSION}
 
-publish: publish-pack publish-buildpacks
+publish: publish-pack publish-buildpack
 
 test-style:
 	${SHELLCHECK_PREFIX} $(SHELL_SCRIPTS)
