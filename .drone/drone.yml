@@ -241,7 +241,7 @@ steps:
   pull: if-not-exists
   commands:
   - sed -i "s/docker.io/$${DRYCC_REGISTRY}/g" .drone/manifest-buildpacks.tmpl
-  - sed -i "s/docker.io/${DRYCC_REGISTRY}/g" builder-20.toml
+  - sed -i "s/docker.io/${DRYCC_REGISTRY}/g" builder.toml
   environment:
     DRYCC_REGISTRY:
       from_secret: drycc_registry

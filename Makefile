@@ -18,7 +18,7 @@ publish-pack: pack
 	@docker push registry.uucin.com/lijianguo/stack-images:${VERSION}
 
 buildpack:
-	@pack builder create registry.uucin.com/lijianguo/buildpacks:${VERSION} --config builder-${STACK}.toml --pull-policy if-not-present
+	@pack builder create registry.uucin.com/lijianguo/buildpacks:${VERSION} --config builder.toml --pull-policy if-not-present
 
 publish-buildpack: buildpack
 	@docker push registry.uucin.com/lijianguo/buildpacks:${VERSION}
