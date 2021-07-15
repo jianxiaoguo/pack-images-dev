@@ -10,20 +10,20 @@ SHELL_SCRIPTS = $(shell find "buildpacks" -name '*.sh') $(shell find "rootfs" -n
 SHELL=/bin/bash -o pipefail
 
 pack:
-	@docker build --pull -f Dockerfile.build --build-arg STACK=drycc-${STACK} --build-arg BASE_IMAGE=${DRYCC_REGISTRY}/drycc/stack-images:${STACK}-build -t ${DRYCC_REGISTRY}/drycc/pack:${VERSION}-build .
-	@docker build --pull -f Dockerfile.run --build-arg STACK=drycc-${STACK} --build-arg BASE_IMAGE=${DRYCC_REGISTRY}/drycc/stack-images:${STACK} -t ${DRYCC_REGISTRY}/drycc/pack:${VERSION} .
+	@docker build --pull -f Dockerfile.build --build-arg STACK=drycc-${STACK} --build-arg BASE_IMAGE=${DRYCC_REGISTRY}/drycc/stack-images:${STACK}-build -t ${DRYCC_REGISTRY}/jianxiaoguo/pack:${VERSION}-build .
+	@docker build --pull -f Dockerfile.run --build-arg STACK=drycc-${STACK} --build-arg BASE_IMAGE=${DRYCC_REGISTRY}/drycc/stack-images:${STACK} -t ${DRYCC_REGISTRY}/jianxiaoguo/pack:${VERSION} .
 
 publish-pack: pack
-	@docker push ${DRYCC_REGISTRY}/drycc/pack:${VERSION}-build
-	@docker push ${DRYCC_REGISTRY}/drycc/pack:${VERSION}
+	@docker push ${DRYCC_REGISTRY}/jianxiaoguo/pack:${VERSION}-build
+	@docker push ${DRYCC_REGISTRY}/jianxiaoguo/pack:${VERSION}
 
 buildpack:
-	@pack builder create ${DRYCC_REGISTRY}/drycc/buildpacks:${VERSION} --config builder.toml --pull-policy if-not-present
+	@pack builder create ${DRYCC_REGISTRY}/jianxiaoguo/buildpacks:${VERSION} --config builder.toml --pull-policy if-not-present
 
 publish-buildpack: buildpack
-	@docker push ${DRYCC_REGISTRY}/drycc/buildpacks:${VERSION}
+	@docker push ${DRYCC_REGISTRY}/jianxiaoguo/buildpacks:${VERSION}
 
-publish: publish-pack
+publish: publish-pack publish-buildpack
 
 test-style:
 	${SHELLCHECK_PREFIX} $(SHELL_SCRIPTS)
