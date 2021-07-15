@@ -13,4 +13,4 @@ with [Cloud Native Buildpacks'](https://buildpacks.io)
 
 ## Usage
 
-`pack build myapp --builder drycc/buildpacks:18`
+`pack build myapp --builder drycc/buildpacks:20`

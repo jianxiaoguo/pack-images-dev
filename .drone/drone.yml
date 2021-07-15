@@ -12,7 +12,6 @@ steps:
   pull: if-not-exists
   privileged: true
   commands:
-  - STACK=18 make test-style
   - STACK=20 make test-style
   environment:
     DEV_REGISTRY:
@@ -36,7 +35,6 @@ steps:
   privileged: true
   commands:
   - echo $DOCKER_PASSWORD | docker login $DRYCC_REGISTRY --username $DOCKER_USERNAME --password-stdin
-  - STACK=18 VERSION=18-linux-amd64 make publish-pack
   - STACK=20 VERSION=20-linux-amd64 make publish-pack
   environment:
     DEV_REGISTRY:
@@ -82,7 +80,6 @@ steps:
   privileged: true
   commands:
   - echo $DOCKER_PASSWORD | docker login $DRYCC_REGISTRY --username $DOCKER_USERNAME --password-stdin
-  - STACK=18 VERSION=18-linux-arm64 make publish-pack
   - STACK=20 VERSION=20-linux-arm64 make publish-pack
   environment:
     DEV_REGISTRY:
@@ -115,36 +112,6 @@ steps:
   - sed -i "s/docker.io/$${DRYCC_REGISTRY}/g" .drone/manifest.tmpl
   - sed -i "s/docker.io/$${DRYCC_REGISTRY}/g" .drone/manifest-build.tmpl
   environment:
-    DRYCC_REGISTRY:
-      from_secret: drycc_registry
-
-- name: publish-18
-  image: plugins/manifest
-  settings:
-    spec: .drone/manifest.tmpl
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
-  environment:
-    STACK: 18
-    DEV_REGISTRY:
-      from_secret: dev_registry
-    DRYCC_REGISTRY:
-      from_secret: drycc_registry
-
-- name: publish-18-build
-  image: plugins/manifest
-  settings:
-    spec: .drone/manifest-build.tmpl
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
-  environment:
-    STACK: 18
-    DEV_REGISTRY:
-      from_secret: dev_registry
     DRYCC_REGISTRY:
       from_secret: drycc_registry
 
@@ -203,7 +170,6 @@ steps:
   privileged: true
   commands:
   - echo $DOCKER_PASSWORD | docker login $DRYCC_REGISTRY --username $DOCKER_USERNAME --password-stdin
-  - STACK=18 VERSION=18-linux-amd64 make publish-buildpack
   - STACK=20 VERSION=20-linux-amd64 make publish-buildpack
   environment:
     DEV_REGISTRY:
@@ -242,7 +208,6 @@ steps:
   privileged: true
   commands:
   - echo $DOCKER_PASSWORD | docker login $DRYCC_REGISTRY --username $DOCKER_USERNAME --password-stdin
-  - STACK=18 VERSION=18-linux-arm64 make publish-buildpack
   - STACK=20 VERSION=20-linux-arm64 make publish-buildpack
   environment:
     DEV_REGISTRY:
@@ -276,24 +241,8 @@ steps:
   pull: if-not-exists
   commands:
   - sed -i "s/docker.io/$${DRYCC_REGISTRY}/g" .drone/manifest-buildpacks.tmpl
-  - sed -i "s/docker.io/${DRYCC_REGISTRY}/g" builder-18.toml
   - sed -i "s/docker.io/${DRYCC_REGISTRY}/g" builder-20.toml
   environment:
-    DRYCC_REGISTRY:
-      from_secret: drycc_registry
-
-- name: publish-18-buildpacks
-  image: plugins/manifest
-  settings:
-    spec: .drone/manifest-buildpacks.tmpl
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
-  environment:
-    STACK: 18
-    DEV_REGISTRY:
-      from_secret: dev_registry
     DRYCC_REGISTRY:
       from_secret: drycc_registry
 
