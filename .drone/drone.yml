@@ -111,7 +111,10 @@ steps:
   commands:
   - sed -i "s/docker.io/$${DRYCC_REGISTRY}/g" .drone/manifest-run.tmpl
   - sed -i "s/docker.io/$${DRYCC_REGISTRY}/g" .drone/manifest-build.tmpl
+  - sed -i "s/20/$${STACK}/g" .drone/manifest-run.tmpl
+  - sed -i "s/20/$${STACK}/g" .drone/manifest-build.tmpl
   environment:
+    STACK: 20
     DRYCC_REGISTRY:
       from_secret: drycc_registry
 
@@ -241,8 +244,11 @@ steps:
   pull: if-not-exists
   commands:
   - sed -i "s/docker.io/$${DRYCC_REGISTRY}/g" .drone/manifest-buildpacks.tmpl
-  - sed -i "s/docker.io/${DRYCC_REGISTRY}/g" builder.toml
+  - sed -i "s/docker.io/$${DRYCC_REGISTRY}/g" builder.toml
+  - sed -i "s/20/$${STACK}/g" .drone/manifest-buildpacks.tmpl
+  - sed -i "s/20/$${STACK}/g" builder.toml
   environment:
+    STACK: 20
     DRYCC_REGISTRY:
       from_secret: drycc_registry
 
