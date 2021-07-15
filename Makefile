@@ -18,7 +18,7 @@ publish-pack: pack
 	@docker push ${DRYCC_REGISTRY}/drycc/pack:${VERSION}
 
 buildpack:
-	@pack builder create ${DRYCC_REGISTRY}/drycc/buildpacks:${VERSION} --config builder-${STACK}.toml --pull-policy if-not-present
+	@pack builder create ${DRYCC_REGISTRY}/drycc/buildpacks:${VERSION} --config builder.toml --pull-policy if-not-present
 
 publish-buildpack: buildpack
 	@docker push ${DRYCC_REGISTRY}/drycc/buildpacks:${VERSION}
